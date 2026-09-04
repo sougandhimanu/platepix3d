@@ -9,11 +9,15 @@ This is a demo/prototype built with mock data — it maps directly onto the
 three roadmap phases so you can see (and click through) what the executive
 summary describes.
 
+**Status:** still actively working on more realistic 3D rendering (the dish
+models are procedurally generated, not photorealistic scans) and on covering
+more dishes/cuisines — see [Known limitations](#known-limitations) below.
+
 ## Modules
 
 | Route | Roadmap phase | What it does |
 |---|---|---|
-| `/studio` | Phase 1 — R&D | Upload (or pick a sample) dish photo → simulated CNN reconstruction pipeline → rotatable Three.js 3D model. |
+| `/studio` | Phase 1 — R&D | Upload (or pick a sample) dish photo → real on-device image classification (TensorFlow.js + MobileNet) → rotatable Three.js 3D model for one of 9 modeled dish shapes. |
 | `/inventory` | Phase 2 — Integration & testing | Live-refreshing dashboard: days-of-cover per ingredient, reorder flags, and projected waste-cost savings from AI-guided portioning. |
 | `/menu` | Phase 3 — Deployment | Diet / spice / budget / calorie preferences re-rank the menu client-side against a scoring model, with explainable "why this dish" reasons. |
 
@@ -73,6 +77,24 @@ from the UI so each mock can be swapped for a real system:
   forecasting model once historical usage data is available.
 - `recommend.ts` → replace the content-based ranker with a trained model
   (e.g. gradient-boosted ranker on order history + session signals).
+
+## Known limitations
+
+- **3D models are procedurally generated, not a reconstruction of the photo.**
+  Classification is real (MobileNet actually looks at the uploaded photo's
+  pixels), but the 3D shape shown is one of 9 hand-built stand-in models for
+  that dish *category* — not a mesh derived from the specific photo. Still
+  actively working on rendering more realistic 3D models.
+- **Only 9 dish shapes exist today** (burger, pizza, bowl, salad, cake, taco,
+  pasta, hot dog, ice cream), and the classifier's vocabulary is ImageNet's
+  1,000 categories, which has no coverage of most world cuisines. A photo of
+  an unfamiliar dish (e.g. vada pav, dosa, biryani) gets the model's closest
+  visual guess among categories it does know, honestly labeled as such in the
+  UI. Still actively working on covering more dishes/cuisines — the planned
+  next step is swapping in CLIP-based zero-shot classification (a
+  custom vocabulary instead of ImageNet's fixed list) alongside a few more
+  generic 3D shape archetypes (dumpling/fritter, flatbread, skewer, rice
+  dish) that can represent many more dishes without hand-modeling each one.
 
 ## Deploying
 
