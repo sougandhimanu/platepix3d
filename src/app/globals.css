@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+body {
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-edge bg-panel p-5 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset];
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-ink hover:bg-brand-soft;
+  }
+  .btn-ghost {
+    @apply btn border border-edge text-slate-200 hover:bg-edge/60;
+  }
+  .label {
+    @apply text-xs font-medium uppercase tracking-wide text-slate-400;
+  }
+  .pill {
+    @apply inline-flex items-center rounded-full border border-edge px-2.5 py-0.5 text-xs text-slate-300;
+  }
+}
+
+/* range inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: #233040;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff7a45;
+  cursor: pointer;
+  border: 2px solid #0d1117;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff7a45;
+  cursor: pointer;
+  border: 2px solid #0d1117;
+}
