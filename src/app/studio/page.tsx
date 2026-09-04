@@ -183,18 +183,6 @@ export default function StudioPage() {
                 <p className="label">Classified as</p>
                 <p className="mt-1 text-lg font-semibold capitalize">{result.kind}</p>
               </div>
-              <div>
-                <p className="label">Mesh</p>
-                <p className="mt-1 text-slate-300">
-                  {result.meshStats.vertices.toLocaleString()} verts · {result.meshStats.faces.toLocaleString()} faces
-                </p>
-              </div>
-              <div>
-                <p className="label">Texture</p>
-                <p className="mt-1 text-slate-300">
-                  {result.meshStats.textureRes}×{result.meshStats.textureRes}
-                </p>
-              </div>
             </div>
           )}
         </div>
