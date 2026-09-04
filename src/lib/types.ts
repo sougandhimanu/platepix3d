@@ -1,4 +1,4 @@
-export type FoodKind = "burger" | "pizza" | "bowl" | "salad" | "cake" | "taco";
+export type FoodKind = "burger" | "pizza" | "bowl" | "salad" | "cake" | "taco" | "pasta" | "hotdog" | "icecream";
 
 export type Diet = "omnivore" | "vegetarian" | "vegan" | "pescatarian";
 
@@ -52,4 +52,6 @@ export interface ReconstructResult {
   stages: { label: string; ms: number }[];
   meshStats: { vertices: number; faces: number; textureRes: number };
   suggestedDishId: string | null;
+  /** True image-content classification (client-side MobileNet), when available. */
+  detection?: { label: string; probability: number; matched: boolean } | null;
 }

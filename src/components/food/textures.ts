@@ -141,11 +141,11 @@ export function bunCrustTexture(seed = 1): Tex {
   const { c: bc, ctx: bctx } = makeCanvas(size);
   const base = mottled(`bun-base-${seed}`, {
     size,
-    base: "#e0a256",
-    accent: "#b06a2e",
-    scale: 5,
+    base: "#e8ab55",
+    accent: "#c37a2a",
+    scale: 6,
     seed,
-    vignette: 0.35,
+    vignette: 0.2,
   });
   ctx.drawImage(base.map.image as HTMLCanvasElement, 0, 0);
   bctx.drawImage(base.bump.image as HTMLCanvasElement, 0, 0);
@@ -186,22 +186,22 @@ export function bunCrustTexture(seed = 1): Tex {
 /** Seared beef patty: dark char blotches over a browned base. */
 export function pattyCharTexture(seed = 2): Tex {
   return mottled(`patty-${seed}`, {
-    base: "#7a4426",
-    accent: "#2c150b",
-    scale: 7,
+    base: "#3c2013",
+    accent: "#160b06",
+    scale: 9,
     seed,
-    speckle: "#160a05",
-    speckleDensity: 0.01,
-    vignette: 0.3,
+    speckle: "#0c0603",
+    speckleDensity: 0.012,
+    vignette: 0.25,
   });
 }
 
-/** Melted cheese: pale base with darker golden melt streaks. */
+/** Melted cheese: vivid glossy gold/orange. */
 export function cheeseMeltTexture(seed = 3): Tex {
   return mottled(`cheese-${seed}`, {
-    base: "#f3d16a",
-    accent: "#d99a2b",
-    scale: 3.5,
+    base: "#ffcf3d",
+    accent: "#ff9f1c",
+    scale: 3,
     seed,
   });
 }
@@ -214,8 +214,8 @@ export function pizzaCrustTexture(seed = 4): Tex {
   const size = 320;
   const base = mottled(`pizza-crust-base-${seed}`, {
     size,
-    base: "#e8c583",
-    accent: "#c99a4e",
+    base: "#f0c877",
+    accent: "#d19f4a",
     scale: 6,
     seed,
   });
@@ -248,8 +248,8 @@ export function pizzaCrustTexture(seed = 4): Tex {
 /** Pizza cheese with a subtle bubbled-melt bump. */
 export function pizzaCheeseTexture(seed = 5): Tex {
   return mottled(`pizza-cheese-${seed}`, {
-    base: "#f6dd8e",
-    accent: "#e3b652",
+    base: "#ffe58a",
+    accent: "#f5b93f",
     scale: 5,
     seed,
   });
@@ -264,8 +264,8 @@ export function tomatoSliceTexture(seed = 6): Tex {
   const { c, ctx } = makeCanvas(size);
   const { c: bc, ctx: bctx } = makeCanvas(size);
   const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.05, size / 2, size / 2, size * 0.5);
-  grad.addColorStop(0, "#e8735a");
-  grad.addColorStop(1, "#b8342a");
+  grad.addColorStop(0, "#ff6a4a");
+  grad.addColorStop(1, "#d92e1f");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
   bctx.fillStyle = "#888";
@@ -296,7 +296,7 @@ export function tomatoSliceTexture(seed = 6): Tex {
 }
 
 /** Leafy green with a mottled tone and a faint central vein. */
-export function leafTexture(seed = 7, baseHex = "#5f9a3d", accentHex = "#8fc25c"): Tex {
+export function leafTexture(seed = 7, baseHex = "#7ec93f", accentHex = "#a8e066"): Tex {
   const key = `leaf-${seed}-${baseHex}`;
   const hit = cache.get(key);
   if (hit) return hit;
@@ -324,11 +324,11 @@ export function leafTexture(seed = 7, baseHex = "#5f9a3d", accentHex = "#8fc25c"
 /** Dark chocolate ganache with a soft glossy noise sheen. */
 export function chocolateGanacheTexture(seed = 8): Tex {
   return mottled(`ganache-${seed}`, {
-    base: "#3a2013",
-    accent: "#1c0f08",
+    base: "#4a2818",
+    accent: "#24130b",
     scale: 6,
     seed,
-    speckle: "#5a3a22",
+    speckle: "#6e4a2c",
     speckleDensity: 0.002,
   });
 }
@@ -336,11 +336,11 @@ export function chocolateGanacheTexture(seed = 8): Tex {
 /** Corn tortilla with light char speckling. */
 export function tortillaTexture(seed = 9): Tex {
   return mottled(`tortilla-${seed}`, {
-    base: "#f0d998",
-    accent: "#d9b967",
+    base: "#fbe3a0",
+    accent: "#e0be6f",
     scale: 4,
     seed,
-    speckle: "#7a5320",
+    speckle: "#8a5c24",
     speckleDensity: 0.004,
   });
 }
@@ -360,8 +360,8 @@ export function cakeCrumbTexture(seed = 10): Tex {
 /** Marinara/pizza sauce: deep red with slight fbm variation. */
 export function sauceTexture(seed = 12): Tex {
   return mottled(`sauce-${seed}`, {
-    base: "#a8321f",
-    accent: "#7c1f12",
+    base: "#e0432a",
+    accent: "#a8231a",
     scale: 5,
     seed,
   });
@@ -399,12 +399,101 @@ export function avocadoTexture(seed = 11): Tex {
   const size = 192;
   const { c, ctx } = makeCanvas(size);
   const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.08, size / 2, size / 2, size * 0.5);
-  grad.addColorStop(0, "#f2edb0");
-  grad.addColorStop(0.55, "#bcd66a");
-  grad.addColorStop(1, "#5f8a3c");
+  grad.addColorStop(0, "#f7f2ba");
+  grad.addColorStop(0.55, "#c8e378");
+  grad.addColorStop(1, "#6ea043");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
   const tex: Tex = { map: toTexture(c, true), bump: mottled(`avocado-bump-${seed}`, { base: "#888", accent: "#666", scale: 8, seed }).bump };
+  cache.set(key, tex);
+  return tex;
+}
+
+/** Creamy carbonara sauce coating with fine black-pepper speckle. */
+export function creamySauceTexture(seed = 15): Tex {
+  return mottled(`cream-sauce-${seed}`, {
+    base: "#f3e3ba",
+    accent: "#e0c98c",
+    scale: 6,
+    seed,
+    speckle: "#2a1f14",
+    speckleDensity: 0.008,
+  });
+}
+
+/** Grilled sausage: reddish-brown glossy skin with faint char striping. */
+export function sausageTexture(seed = 16): Tex {
+  const key = `sausage-${seed}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const size = 256;
+  const base = mottled(`sausage-base-${seed}`, {
+    size,
+    base: "#b8503a",
+    accent: "#8a2f1e",
+    scale: 4,
+    seed,
+  });
+  const { c, ctx } = makeCanvas(size);
+  const { c: bc, ctx: bctx } = makeCanvas(size);
+  ctx.drawImage(base.map.image as HTMLCanvasElement, 0, 0);
+  bctx.drawImage(base.bump.image as HTMLCanvasElement, 0, 0);
+  ctx.strokeStyle = "rgba(60,20,10,0.4)";
+  ctx.lineWidth = size * 0.02;
+  for (let x = -size; x < size * 2; x += size * 0.16) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + size * 0.4, size);
+    ctx.stroke();
+  }
+  const tex: Tex = { map: toTexture(c, true), bump: toTexture(bc, false) };
+  cache.set(key, tex);
+  return tex;
+}
+
+/** Bright mustard zigzag / condiment color, glossy. */
+export function mustardTexture(seed = 17): Tex {
+  return mottled(`mustard-${seed}`, { base: "#f2c419", accent: "#d99e0a", scale: 3, seed });
+}
+
+/** Pale vanilla ice cream with soft swirl variation. */
+export function iceCreamTexture(seed = 18, hue: "vanilla" | "chocolate" | "strawberry" = "vanilla"): Tex {
+  const palette = {
+    vanilla: { base: "#fdf6e3", accent: "#f3e2b8" },
+    chocolate: { base: "#7a4a2e", accent: "#5c341c" },
+    strawberry: { base: "#f9c9d4", accent: "#ef9fb0" },
+  }[hue];
+  return mottled(`icecream-${hue}-${seed}`, { ...palette, scale: 4, seed });
+}
+
+/** Waffle-cone diamond lattice, warm golden brown. */
+export function waffleConeTexture(seed = 19): Tex {
+  const key = `cone-${seed}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const size = 256;
+  const base = mottled(`cone-base-${seed}`, { size, base: "#e0a75c", accent: "#c07f38", scale: 3, seed });
+  const { c, ctx } = makeCanvas(size);
+  const { c: bc, ctx: bctx } = makeCanvas(size);
+  ctx.drawImage(base.map.image as HTMLCanvasElement, 0, 0);
+  bctx.drawImage(base.bump.image as HTMLCanvasElement, 0, 0);
+  ctx.strokeStyle = "rgba(120,70,25,0.55)";
+  bctx.strokeStyle = "#000";
+  ctx.lineWidth = bctx.lineWidth = size * 0.012;
+  const step = size / 8;
+  for (const g of [ctx, bctx]) {
+    for (let i = -8; i <= 16; i++) {
+      g.beginPath();
+      g.moveTo(i * step, 0);
+      g.lineTo(i * step - size, size);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(i * step - size, 0);
+      g.lineTo(i * step, size);
+      g.stroke();
+    }
+  }
+  const tex: Tex = { map: toTexture(c, true), bump: toTexture(bc, false) };
   cache.set(key, tex);
   return tex;
 }
