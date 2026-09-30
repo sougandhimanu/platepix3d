@@ -156,8 +156,9 @@ export default function StudioPage() {
           Upload a dish photo and it&apos;s rebuilt in 3D from the photo itself: a Depth Anything V2
           neural network running in your browser estimates how far every pixel is from the camera, the
           dish is separated from the table by depth, and the result becomes a solid mesh textured with
-          your photo. A MobileNet classifier also matches it to one of our hand-built category models (
-          {modeledKinds}). Sample buttons below have no photo, so they show category models only.
+          your photo. A MobileNet classifier also matches it to one of our reference dishes (
+          {modeledKinds}). The sample buttons show those reference dishes: real photos rebuilt in 3D the
+          same way.
         </p>
       </div>
 
@@ -220,7 +221,7 @@ export default function StudioPage() {
                   — that doesn&apos;t match any of our modeled dishes ({modeledKinds}). The classifier is a
                   general-purpose model trained on ImageNet&apos;s 1,000 categories, a dated, Western-centric list
                   that&apos;s missing most world cuisines (no vada pav, dosa, biryani, pho, etc.), so unfamiliar
-                  dishes get its closest visual guess rather than a real match. The category model is an honest
+                  dishes get its closest visual guess rather than a real match. The reference dish is an honest
                   fallback, not a real match — the 3D model built from your photo doesn&apos;t depend on this.
                 </p>
               )}
@@ -296,7 +297,7 @@ export default function StudioPage() {
                   onClick={() => setTab("category")}
                   className={`px-3 py-1.5 capitalize ${tab === "category" ? "bg-brand/20 text-brand" : "text-slate-400 hover:text-slate-200"}`}
                 >
-                  Category model: {result.kind}
+                  Reference dish: {result.kind}
                 </button>
               </div>
             )}

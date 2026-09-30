@@ -10,11 +10,13 @@ import { boxBlur, type DepthMap } from "./depth";
  *      of the table it sits on, height above the table can. Otsu-threshold
  *      that height, keep the largest connected region and fill its holes.
  *   3. Displace the front surface by depth (UV-mapped to the original photo).
- *   4. Close the shape: walls along the silhouette plus a back surface. With
- *      the background cut out, the back mirrors part of the front's relief so
- *      the dish reads as a rounded solid when orbited instead of a flat card.
+ *   4. Close the shape. With the background cut out, the front curves back to
+ *      meet a plain, gently domed back at the silhouette (no walls), so the
+ *      edges read as rounded instead of a cardboard cut-out. Uncut photos get
+ *      walls and a flat back. The photo is only ever on the front — the back
+ *      is never faked from it.
  *
- * Geometry groups: 0 = front (photo), 1 = walls + back (darkened photo).
+ * Geometry groups: 0 = front (photo), 1 = walls, 2 = back (untextured).
  */
 
 export interface ReliefOptions {
@@ -24,6 +26,12 @@ export interface ReliefOptions {
   cutout: boolean;
   /** Grid cells along the longest side. */
   resolution?: number;
+  /**
+   * How round the cut-out dish is, as half-thickness relative to its inner
+   * radius: ~0.9 for side-on photos (a burger is about as deep as it is wide),
+   * small for overhead shots laid flat (a pizza is thin).
+   */
+  inflate?: number;
 }
 
 export interface DepthSegmentation {
@@ -234,10 +242,16 @@ function dishMask(grid: Grid, height: Float32Array, threshold: number): Uint8Arr
   return eroded;
 }
 
-export function analyzeDepth(depth: DepthMap): DepthSegmentation {
+/**
+ * `thresholdScale` < 1 cuts less aggressively — for overhead shots, where the
+ * toppings stand far above the crust/plate and Otsu would keep only them.
+ */
+export function analyzeDepth(depth: DepthMap, { thresholdScale = 1 }: { thresholdScale?: number } = {}): DepthSegmentation {
   const grid = sampleGrid(depth, 96);
   const { height } = heightAboveTable(grid);
-  const { threshold, separation } = otsu(height);
+  const otsuResult = otsu(height);
+  const separation = otsuResult.separation;
+  const threshold = otsuResult.threshold * thresholdScale;
   const mask = dishMask(grid, height, threshold);
   let count = 0;
   for (const m of mask) count += m;
@@ -259,7 +273,7 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
   const S = opts.strength * 2;
 
   const cutoutApplied = opts.cutout && seg.separable;
-  const { height, plane } = heightAboveTable(grid);
+  const { height } = heightAboveTable(grid);
   const mask = cutoutApplied ? dishMask(grid, height, seg.threshold) : new Uint8Array(values.length).fill(1);
 
   // A cell is kept only if all four of its corners belong to the dish.
@@ -271,12 +285,63 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
   const uvs: number[] = [];
   const frontIndex: number[] = [];
   const shellIndex: number[] = [];
+  const backIndex: number[] = [];
+
+  // Distance (in cells) from each dish vertex to the silhouette, turned into
+  // a 0..1 dome profile: 0 on the outline, 1 deep inside.
+  const H = rows + 1;
+  const profile = new Float32Array(values.length).fill(1);
+  let vMin = Infinity;
+  let halfThickness = 0;
+  if (cutoutApplied) {
+    const dist = new Float32Array(values.length);
+    for (let k = 0; k < dist.length; k++) dist[k] = mask[k] ? 1e9 : 0;
+    const relax = (k: number, m: number, cost: number) => {
+      if (dist[m] + cost < dist[k]) dist[k] = dist[m] + cost;
+    };
+    for (let j = 0; j < H; j++) {
+      for (let i = 0; i < W; i++) {
+        const k = j * W + i;
+        if (!mask[k]) continue;
+        dist[k] = Math.min(dist[k], i + 1, j + 1, W - i, H - j);
+        if (i > 0) relax(k, k - 1, 1);
+        if (j > 0) relax(k, k - W, 1);
+        if (i > 0 && j > 0) relax(k, k - W - 1, Math.SQRT2);
+        if (i < W - 1 && j > 0) relax(k, k - W + 1, Math.SQRT2);
+      }
+    }
+    for (let j = H - 1; j >= 0; j--) {
+      for (let i = W - 1; i >= 0; i--) {
+        const k = j * W + i;
+        if (!mask[k]) continue;
+        if (i < W - 1) relax(k, k + 1, 1);
+        if (j < H - 1) relax(k, k + W, 1);
+        if (i < W - 1 && j < H - 1) relax(k, k + W + 1, Math.SQRT2);
+        if (i > 0 && j < H - 1) relax(k, k + W - 1, Math.SQRT2);
+      }
+    }
+    let dMax = 1;
+    for (let k = 0; k < dist.length; k++) {
+      if (!mask[k]) continue;
+      dMax = Math.max(dMax, dist[k]);
+      vMin = Math.min(vMin, values[k]);
+    }
+    for (let k = 0; k < dist.length; k++) {
+      const t = mask[k] ? Math.min(1, Math.max(0, (dist[k] - 1) / Math.max(1, dMax - 1))) : 0;
+      profile[k] = Math.sqrt(1 - (1 - t) * (1 - t)); // circular: vertical at the rim
+    }
+    halfThickness = (opts.inflate ?? 0.9) * dMax * (sx / cols);
+  }
 
   // Front surface: one shared vertex per grid point (smooth normals).
   let zMinFront = Infinity;
+  const frontZ = (k: number) => {
+    if (!cutoutApplied) return S * values[k];
+    return profile[k] * (0.5 * halfThickness + S * (values[k] - vMin));
+  };
   for (let j = 0; j <= rows; j++) {
     for (let i = 0; i <= cols; i++) {
-      const z = S * values[j * W + i];
+      const z = frontZ(j * W + i);
       if (mask[j * W + i]) zMinFront = Math.min(zMinFront, z);
       positions.push((i / cols - 0.5) * sx, (0.5 - j / rows) * sy, z);
       uvs.push(i / cols, 1 - j / rows);
@@ -284,16 +349,10 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
   }
   const frontCount = (cols + 1) * (rows + 1);
 
-  // Back surface: flat card when showing the full photo. When the dish is cut
-  // out, the hidden side mirrors part of the front's height above the table
-  // plane, so the dish reads as a rounded solid rather than a thin shell.
+  // Back surface: a flat card when showing the full photo; for a cut-out dish,
+  // a plain shallow dome meeting the front at the silhouette.
   const zBase = zMinFront - 0.03;
-  const backZ = (k: number) => {
-    if (!cutoutApplied) return zBase;
-    const i = k % W, j = (k - i) / W;
-    const zTable = S * plane(i / cols, j / rows) - 0.02;
-    return zTable - 0.55 * Math.max(0, positions[k * 3 + 2] - zTable);
-  };
+  const backZ = (k: number) => (cutoutApplied ? -profile[k] * 0.25 * halfThickness : zBase);
   for (let k = 0; k < frontCount; k++) {
     positions.push(positions[k * 3], positions[k * 3 + 1], backZ(k));
     uvs.push(uvs[k * 2], uvs[k * 2 + 1]);
@@ -320,7 +379,8 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
       if (!cellOn(i, j)) continue;
       const a = j * W + i, b = a + 1, c = a + W, d = c + 1;
       frontIndex.push(a, c, b, b, c, d);
-      shellIndex.push(frontCount + a, frontCount + b, frontCount + c, frontCount + b, frontCount + d, frontCount + c);
+      backIndex.push(frontCount + a, frontCount + b, frontCount + c, frontCount + b, frontCount + d, frontCount + c);
+      if (cutoutApplied) continue;
       if (!cellOn(i, j - 1)) wall(b, a);
       if (!cellOn(i - 1, j)) wall(a, c);
       if (!cellOn(i, j + 1)) wall(c, d);
@@ -331,10 +391,11 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  const index = [...frontIndex, ...shellIndex];
+  const index = [...frontIndex, ...shellIndex, ...backIndex];
   geometry.setIndex(index);
   geometry.addGroup(0, frontIndex.length, 0);
   geometry.addGroup(frontIndex.length, shellIndex.length, 1);
+  geometry.addGroup(frontIndex.length + shellIndex.length, backIndex.length, 2);
   geometry.computeVertexNormals();
   geometry.center();
 
@@ -346,7 +407,7 @@ export function buildReliefGeometry(depth: DepthMap, seg: DepthSegmentation, opt
   return {
     geometry,
     vertices,
-    triangles: (frontIndex.length + shellIndex.length) / 3,
+    triangles: index.length / 3,
     cutoutApplied,
   };
 }

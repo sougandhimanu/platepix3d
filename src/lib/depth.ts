@@ -189,3 +189,28 @@ export async function estimateDepth(
     };
   }
 }
+
+/** Loads an image URL into a canvas (longest side ≤ `maxSide`). */
+export function loadImageCanvas(url: string, maxSide = 1536): Promise<HTMLCanvasElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(imageToCanvas(img, maxSide));
+    img.onerror = () => reject(new Error(`Couldn't load ${url}`));
+    img.src = url;
+  });
+}
+
+/**
+ * Loads a depth map precomputed offline (Depth Anything V2 small, Apache-2.0) and stored as
+ * a 16-bit PNG: red = high byte, green = low byte. Used for the reference dish
+ * photos so they render instantly, without downloading the depth model.
+ */
+export async function loadPrecomputedDepth(url: string): Promise<DepthMap> {
+  const t0 = performance.now();
+  const canvas = await loadImageCanvas(url, 4096);
+  const { width, height } = canvas;
+  const px = canvas.getContext("2d", { willReadFrequently: true })!.getImageData(0, 0, width, height).data;
+  const raw = new Float32Array(width * height);
+  for (let i = 0; i < raw.length; i++) raw[i] = (px[i * 4] * 256 + px[i * 4 + 1]) / 65535;
+  return { width, height, data: normalizeRobust(raw), source: "depth-anything-v2", ms: performance.now() - t0 };
+}

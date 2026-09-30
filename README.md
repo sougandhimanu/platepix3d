@@ -11,14 +11,15 @@ summary describes.
 
 **Status:** uploaded photos are now turned into a 3D model built from that
 photo itself (via in-browser depth estimation), so any dish works — not just
-the 9 modeled categories. Still actively working on more realistic 3D
-rendering — see [Known limitations](#known-limitations) below.
+the 9 modeled categories. The 9 reference dishes are real photos (CC0 /
+public domain) rebuilt in 3D the same way — see
+[Known limitations](#known-limitations) below.
 
 ## Modules
 
 | Route | Roadmap phase | What it does |
 |---|---|---|
-| `/studio` | Phase 1 — R&D | Upload a dish photo → on-device depth estimation (Depth Anything V2) builds a solid, photo-textured 3D mesh of *that* dish, with depth/background-cutout controls and `.glb` export. MobileNet classification runs alongside and also shows the matching hand-built category model. Sample buttons show the 9 category models. |
+| `/studio` | Phase 1 — R&D | Upload a dish photo → on-device depth estimation (Depth Anything V2) builds a solid, photo-textured 3D mesh of *that* dish, with depth/background-cutout controls and `.glb` export. MobileNet classification runs alongside and also shows the matching reference dish. Sample buttons show the 9 reference dishes (real photos rebuilt in 3D). |
 | `/inventory` | Phase 2 — Integration & testing | Live-refreshing dashboard: days-of-cover per ingredient, reorder flags, and projected waste-cost savings from AI-guided portioning. |
 | `/menu` | Phase 3 — Deployment | Diet / spice / budget / calorie preferences re-rank the menu client-side against a scoring model, with explainable "why this dish" reasons. |
 
@@ -26,7 +27,8 @@ rendering — see [Known limitations](#known-limitations) below.
 
 - [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
 - [Tailwind CSS](https://tailwindcss.com/) for styling
-- [react-three-fiber](https://docs.pmnd.rs/react-three-fiber) + [drei](https://github.com/pmndrs/drei) for the 3D viewer (procedural food geometry — no external model files needed)
+- [react-three-fiber](https://docs.pmnd.rs/react-three-fiber) + [drei](https://github.com/pmndrs/drei) for the 3D viewer
+- Free, no-attribution assets only: reference dish photos from Wikimedia Commons (CC0 / public domain, `public/dishes/`) — sources listed in `public/dishes/SOURCES.md`
 - [Transformers.js](https://huggingface.co/docs/transformers.js) running [Depth Anything V2 (small)](https://huggingface.co/onnx-community/depth-anything-v2-small) for photo → depth, fully in the browser (WebGPU when available, otherwise WASM)
 - [TensorFlow.js](https://www.tensorflow.org/js) + MobileNet for dish classification
 - [Recharts](https://recharts.org/) for the inventory chart
@@ -62,15 +64,15 @@ src/
       personalize/route.ts  POST preferences -> ranked dishes
       reconstruct/route.ts  POST photo -> simulated 3D reconstruction result
   components/
-    DishViewer.tsx        Three.js canvas wrapper (lighting, reflections, controls, shadows)
-    PhotoRelief.tsx       viewer for the photo-derived 3D mesh (+ .glb export)
-    food/FoodModel.tsx     procedural 3D geometry per dish kind
-    food/geometry.ts       shape helpers (bendable discs, plates/bowls, noise displacement)
+    DishViewer.tsx        reference 3D model per dish (photo + precomputed depth)
+    PhotoRelief.tsx       viewer for photo-derived 3D meshes (+ .glb export)
     Nav.tsx
   lib/
     depth.ts        in-browser depth estimation (Depth Anything V2)
     photoMesh.ts    depth map -> table-plane fit, dish cutout, solid textured mesh
     classify.ts     MobileNet dish classification
+public/
+  dishes/          reference dish photos + precomputed 16-bit depth maps
     data.ts        seed dishes + ingredients
     types.ts        shared types
     recommend.ts    personalization scoring model
@@ -94,19 +96,21 @@ from the UI so each mock can be swapped for a real system:
 
 ## Known limitations
 
-- **Photo-derived models only see one side.** A single photo shows the front
-  of the dish, so the hidden back is estimated by mirroring the front relief.
-  It looks right from the front and up to ~60° either side (the viewer's orbit
-  is limited to that range), not from directly behind.
+- **Photo-derived models only show what the photo shows.** The photo covers
+  the front only; the back is a plain shell and is never faked from the
+  photo. Side-on dishes (burger, hot dog, cake, ice cream) stand upright and
+  turn up to ~75° either side. Overhead shots (pizza, bowl, salad, tacos,
+  pasta) lie flat on the table and can be circled a full 360° from above.
 - **Background cutout works best on a plain table.** The dish is separated
   from its surroundings by its height above the fitted table plane; cluttered
   scenes or extreme close-ups may not separate, in which case the cutout
   switches off and the full photo is shown in relief.
 - **If the depth model can't load** (offline, blocked CDN), a clearly labeled
   center-weighted heuristic depth is used instead of a real estimate.
-- **The category models are stylized, not photorealistic.** The 9 hand-built
-  shapes (burger, pizza, bowl, salad, cake, taco, pasta, hot dog, ice cream)
-  are used for the sample buttons, landing page and menu.
+- **True all-round detail needs real scans.** No free no-credit (CC0) 3D
+  scans of these dishes exist online, so the reference dishes are photos.
+  Scanning the real plated dishes (e.g. Polycam / RealityScan → `.glb`) would
+  capture their actual backs and allow full rotation of upright dishes too.
 - **Classification covers few cuisines.** It only picks the category-model
   tab (the photo-derived model doesn't depend on it), but its vocabulary is
   ImageNet's 1,000 categories, which has no coverage of most world cuisines.
